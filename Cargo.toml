@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 mp4 = "0.14.0"
+openh264 = "0.4.4"
