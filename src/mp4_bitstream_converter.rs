@@ -1,5 +1,7 @@
-use anyhow::anyhow;
-use mp4::Mp4Track;
+use {
+    crate::errors::video::{VideoError, VideoResult},
+    mp4::Mp4Track,
+};
 
 /// Network abstraction layer type for H264 pocket we might find.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -119,16 +121,6 @@ impl<'a> NalUnit<'a> {
 
         Some((unit, stream))
     }
-
-    #[allow(unused)]
-    fn nal_type(&self) -> NalType {
-        self.nal_type
-    }
-
-    #[allow(unused)]
-    fn bytes(&self) -> &'a [u8] {
-        self.bytes
-    }
 }
 
 /// Converter from NAL units from the MP4 to the Annex B format expected by openh264.
@@ -150,7 +142,7 @@ impl Mp4BitstreamConverter {
     ///
     /// The track must contain an AVC1 configuration.
     /// The track must contain an AVC1 configuration.
-    pub fn for_mp4_track(track: &Mp4Track) -> Result<Self, anyhow::Error> {
+    pub fn for_mp4_track(track: &Mp4Track) -> VideoResult<Self> {
         let avcc_config = &track
             .trak
             .mdia
@@ -159,7 +151,7 @@ impl Mp4BitstreamConverter {
             .stsd
             .avc1
             .as_ref()
-            .ok_or_else(|| anyhow!("Track does not contain AVC1 config"))?
+            .ok_or_else(|| VideoError::VideoDecodingError)?
             .avcc;
 
         Ok(Self {

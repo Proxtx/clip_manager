@@ -1,9 +1,10 @@
 use mp4::Result;
-use openh264::{decoder, nal_units};
+use openh264::decoder;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::BufReader;
 
-//mod mp4_bitstream_converter;
+mod errors;
+mod mp4_bitstream_converter;
 
 fn main() -> Result<()> {
     let f = File::open("example_data/video.mp4").unwrap();
@@ -43,17 +44,25 @@ fn main() -> Result<()> {
     let track = mp4
         .tracks()
         .values()
-        .find(|elem| elem.track_type().unwrap() == mp4::TrackType::Video)
+        .find(|elem| elem.media_type().unwrap() == mp4::MediaType::H264)
         .unwrap();
-
     let track_id = track.track_id();
 
+    let mut converter =
+        mp4_bitstream_converter::Mp4BitstreamConverter::for_mp4_track(track).unwrap();
     let mut dec = decoder::Decoder::new().unwrap();
 
+    let mut buffer = Vec::new();
     let sample = mp4.read_sample(track_id, 1).unwrap().unwrap();
 
-    let frm = dec.decode(&sample.bytes.split_at(30).0);
-    println!("{} {:?}", sample.bytes.len(), frm);
+    converter.convert_packet(&sample.bytes, &mut buffer);
+
+    let dcy = dec.decode(&buffer).unwrap().unwrap();
+    let dim_img = dcy.dimension_rgb();
+    let mut buf_img = vec![0; dim_img.0 * dim_img.1 * 3];
+    dcy.write_rgb8(&mut buf_img);
+
+    println!("{:?}", buf_img);
 
     Ok(())
 }
