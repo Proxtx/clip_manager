@@ -1,2 +1,2 @@
 [rainbow_six_siege]
-kill = {method = "pixel" options = {location = [], color = "#ffffff"}}
+kill = {method = "pixel", options = {location = [], color = "#ffffff"}}
